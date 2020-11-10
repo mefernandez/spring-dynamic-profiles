@@ -1,5 +1,7 @@
 # spring-dynamic-profiles
-An essay on how to change Spring active profiles without restarting
+An essay* on how to change Spring active profiles without restarting.
+
+(*) Not a real essay!
 
 # Why
 
