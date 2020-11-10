@@ -58,3 +58,108 @@ Here's what's relevant about each iteration.
 
 ## .a
 
+This is the first `@Test` stating what I want to achieve.
+Tests in later packages repeat this intent.
+
+```java
+@ActiveProfiles("mail")
+@SpringBootTest
+class BusinessTest {
+	
+	@Autowired
+	private Business business;
+
+	@SpyBean
+	private DefaultMail defaultMail;
+
+	@SpyBean
+	private DummyMail dummyMail;
+
+	@Test
+	void test() {
+		business.doSomething("data");
+		verify(defaultMail).send("data");
+
+		business.switchToDummy();
+		business.doSomething("data");
+		verify(dummyMail).send("data");
+
+		business.switchToDefault();
+		business.doSomething("data");
+		verify(defaultMail, times(2)).send("data");
+	}
+
+}
+``` 
+
+Here's "the implementation".
+
+```java
+@Service
+public class Business {
+	
+	@Autowired
+	private Mail mail;
+	
+	public void doSomething(String data) {
+		mail.send(data);
+	}
+	
+	@Autowired
+	private DummyMail dummyMail;
+	
+	public void switchToDummy() {
+		this.mail = this.dummyMail;
+	}
+
+	@Autowired
+	private DefaultMail defaultMail;
+
+	public void switchToDefault() {
+		this.mail = this.defaultMail;
+	}
+}
+```
+
+```java
+public interface Mail {
+
+	void send(String data);
+
+}
+```
+
+```java
+@Profile("mail")
+@Primary
+@CommonsLog
+@Component
+public class DefaultMail implements Mail {
+
+	@Override
+	public void send(String data) {
+		log.info("Default Mail send: " + data);
+	}
+
+}
+```
+
+```java
+@CommonsLog
+@Component
+public class DummyMail implements Mail {
+
+	@Override
+	public void send(String data) {
+		log.info("Dummy Mail send: " + data);
+	}
+
+}
+```
+
+
+Keynotes:
+- Small scope, just two main players: Business and Mail.
+- There's really no relationship to Spring active profiles
+- `@ActiveProfiles("mail")` needs to be there for `DefaultMail` to get loaded by Spring.
+- `Business` needs to know all `Mail` implementations.
