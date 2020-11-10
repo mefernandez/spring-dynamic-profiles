@@ -58,7 +58,7 @@ I started to write code and tests inside package `com.example.demo.a` and copied
 
 Here's what's relevant about each iteration.
 
-## .a
+## package .a : Barebones
 
 This is the first `@Test` stating what I want to achieve.
 Tests in later packages repeat this intent.
@@ -165,3 +165,5 @@ Keynotes:
 - There's really no relationship to Spring active profiles
 - `@ActiveProfiles("mail")` needs to be there for `DefaultMail` to get loaded by Spring.
 - `Business` needs to know all `Mail` implementations.
+
+## package .b : 
