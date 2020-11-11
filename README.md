@@ -28,6 +28,10 @@ I then incrementally added more complexity iteratively.
 I kept a package for every iteration, ending with {.a .b .c}
 The next section explain the main problem I was trying to solve in each iteration.
 
+# TL;DR
+
+It's still a work in progress! I will link to the final result when done.
+
 # The case
 
 ![diagram](http://yuml.me/3b1fc7df.png)
@@ -166,4 +170,124 @@ Keynotes:
 - `@ActiveProfiles("mail")` needs to be there for `DefaultMail` to get loaded by Spring.
 - `Business` needs to know all `Mail` implementations.
 
-## package .b : 
+## package .b : Move it out
+
+The main goal in this iteration was to move all the switching profile code out of `Business`.
+I moved it to `ChangeProfile` and kept the implementation as it was.
+
+```java
+@Service
+public class ChangeProfile {
+	
+	@Autowired
+	private Business business;
+	
+	@Autowired
+	private DummyMail dummyMail;
+	
+	public void switchToDummy() {
+		business.setMail(this.dummyMail);
+	}
+
+	@Autowired
+	private DefaultMail defaultMail;
+
+	public void switchToDefault() {
+		business.setMail(this.defaultMail);
+	}
+
+}
+```
+
+## package .c: All the impls
+
+Instead of `@Autowiring` each and every `Mail` implementation, 
+I used Spring's ability to `@Autowire` a `List` of all the beans that implement `Mail`.
+
+```java
+	@Autowired
+	private List<Mail> mail;
+```
+
+## package .d: Map Beans to Profile
+
+I upgraded the `List` to a `Map` associating beans to profiles.
+
+```java
+private Map<String, BeanProfiles> beansMap;
+```
+
+I tried to implement a logic to switch beans matching currently active profiles.
+
+```java
+	public void setActiveProfiles(String profiles) {
+		BeanProfiles bean = beansMap.get(profiles);
+		if (bean != null) {
+			business.setMail((Mail) bean);
+		} else {
+			bean = beansMap.get(BeanProfiles.ANY_BEAN_PROFILE);
+			business.setMail((Mail) bean);
+		}
+	}
+```
+
+It didn't work. I didn't like it.
+
+## package .e: Back to Business
+
+I changed my mind and moved back the "switch to active profiles" reposibility to Business.
+So now `ChangeProfile`'s only mission is to tell every `Business` to switch to these profiles.
+
+```java
+@Service
+public class ChangeProfile {
+	
+	@Autowired
+	private Business business;
+	
+	@Autowired
+	private ApplicationContext context;
+	
+	public void setActiveProfiles(String profiles) {
+		business.setActiveProfiles(context, profiles);
+	}
+
+}
+```
+
+I moved the "choose the right beans" code to `ApplicationContextUtil`.
+So `Business` is quite clean.
+
+```java
+	public void setActiveProfiles(ApplicationContext context, String profiles) {
+		this.mail = ApplicationContextUtil.findBeanForProfiles(context, profiles, Mail.class);
+		this.ftp = ApplicationContextUtil.findBeanForProfiles(context, profiles, Ftp.class);
+	}
+```
+
+## package .f: More components, more Business.
+
+Here I introduced `MoreBusiness` and another `Ftp` integration component 
+to make this more life-like.
+
+`ChangeProfile` can now handle multiple "Business" classes, which implement `ActiveProfilesListener`.
+
+```java
+@Service
+public class ChangeProfile {
+	
+	@Autowired
+	private List<ActiveProfilesListener> listeners;
+	
+	@Autowired
+	private ApplicationContext context;
+	
+	public void setActiveProfiles(String profiles) {
+		if (listeners == null || listeners.isEmpty()) {
+			return;
+		}
+		listeners.forEach(x -> x.setActiveProfiles(context, profiles));
+	}
+
+}
+```
