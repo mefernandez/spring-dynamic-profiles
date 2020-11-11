@@ -205,19 +205,29 @@ Instead of `@Autowiring` each and every `Mail` implementation,
 I used Spring's ability to `@Autowire` a `List` of all the beans that implement `Mail`.
 
 ```java
+@Service
+public class ChangeProfile {
+	
+	@Autowired
+	private Business business;
+	
 	@Autowired
 	private List<Mail> mail;
+	
+	public void switchToDummy() {
+		business.setMail(mail.get(1));
+	}
+
+	public void switchToDefault() {
+		business.setMail(mail.get(0));
+	}
+}
 ```
 
 ## package .d: Map Beans to Profile
 
-I upgraded the `List` to a `Map` associating beans to profiles.
-
-```java
-private Map<String, BeanProfiles> beansMap;
-```
-
-I tried to implement a logic to switch beans matching currently active profiles.
+I tried to implement a logic to switch beans matching currently active profiles
+by building a Map associating Beans to Profiles.
 
 ```java
 	public void setActiveProfiles(String profiles) {
