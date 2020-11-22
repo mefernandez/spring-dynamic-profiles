@@ -30,7 +30,7 @@ The next section explain the main problem I was trying to solve in each iteratio
 
 # TL;DR
 
-It's still a work in progress! I will link to the final result when done.
+Go to [How to use it](#how-to-use-it).
 
 # The case
 
@@ -301,3 +301,57 @@ public class ChangeProfile {
 
 }
 ```
+## package .g: `@RestController`.
+
+Here's the missing piece: a `@RestController` with an endpoint to change the current active profiles at runtime.
+
+```java
+@RestController
+public class ChangeProfileController {
+	
+	@Autowired
+	private ConfigurableEnvironment env;
+	
+	@Autowired
+	private ChangeProfile changeProfile;
+	
+	@GetMapping(path = "get-active-profiles")
+	public String getActiveProfiles() {
+		return Arrays.toString(env.getActiveProfiles());
+	}
+
+	@GetMapping(path = "change-active-profiles", params = "profiles")
+	public String changeActiveProfiles(@RequestParam("profiles") String profiles) {
+		String[] split = profiles.split(",");
+		env.setActiveProfiles(split);
+		changeProfile.setActiveProfiles(profiles);
+		return Arrays.toString(env.getActiveProfiles());
+	}
+}
+```
+
+Open up a browser at http://localhost:8282/get-active-profiles to get a list of active profiles.
+Call http://localhost:8282/change-active-profiles?profiles=a,b to change currently active profiles to `a,b`.
+
+# How to use it
+
+Here's a quick rundown of steps to get dynamic profiles in your project.
+
+1. Copy-paste these classes onto your project (will maybe publish to Maven in the future):
+- `ActiveProfilesListener`
+- `ApplicationContextUtil`
+- `ChangeProfile`
+- `ChangeProfileController`
+2. Implement `ActiveProfilesListener` in your `Business` classes.
+```java
+@Service
+public class Business implements ActiveProfilesListener {
+...
+	@Override
+	public void setActiveProfiles(ApplicationContext context, String profiles) {
+		this.mail = ApplicationContextUtil.findBeanForProfiles(context, profiles, Mail.class);
+		this.ftp = ApplicationContextUtil.findBeanForProfiles(context, profiles, Ftp.class);
+	}
+}
+```
+3. Done.
