@@ -1,19 +1,15 @@
-package com.example.demo.e;
+package com.example.demo.g;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
-import lombok.Setter;
-
 @Service
-public class Business {
+public class MoreBusiness implements ActiveProfilesListener {
 	
-	@Setter
 	@Autowired
 	private Mail mail;
 	
-	@Setter
 	@Autowired
 	private Ftp ftp;
 
@@ -22,7 +18,7 @@ public class Business {
 		ftp.send(data);
 	}
 	
-	
+	@Override
 	public void setActiveProfiles(ApplicationContext context, String profiles) {
 		this.mail = ApplicationContextUtil.findBeanForProfiles(context, profiles, Mail.class);
 		this.ftp = ApplicationContextUtil.findBeanForProfiles(context, profiles, Ftp.class);
