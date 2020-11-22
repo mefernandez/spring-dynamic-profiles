@@ -355,3 +355,55 @@ public class Business implements ActiveProfilesListener {
 }
 ```
 3. Done.
+
+## Hints
+
+You need Spring to load all your profile-based `@Components` at once.
+Make sure you mark one of those as `@Primary` to prevent `expected single matching bean` Spring's `NoUniqueBeanDefinitionException`.
+Like so:
+
+```java
+public interface Mail {
+
+	void send(String data);
+
+}
+```
+
+```java
+@Profile("mail")
+@Primary
+@CommonsLog
+@Component
+public class DefaultMail implements Mail {
+
+	@Override
+	public void send(String data) {
+		log.info("Default Mail send: " + data);
+	}
+
+}
+```
+
+```java
+@CommonsLog
+@Component
+public class DummyMail implements Mail {
+
+	@Override
+	public void send(String data) {
+		log.info("Dummy Mail send: " + data);
+	}
+
+}
+```
+
+## Caveats
+
+All `@Components` need to get loaded by Spring at startup.
+Spring does not load `@Components` that do not match profiles present at startup.
+Hence, all profiles must be present when launching the app.
+
+In other words, if `mail` Profile is not present when launching the app, 
+setting `mail` profile later on will take no effect, since `DefaultMail` will not be available in Spring's context.
+
