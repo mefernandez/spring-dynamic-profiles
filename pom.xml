@@ -65,6 +65,14 @@
 		</dependency>
 	</dependencies>
 
+	<distributionManagement>
+	   <repository>
+	     <id>github</id>
+	     <name>GitHub mefernandez Apache Maven Packages</name>
+	     <url>https://maven.pkg.github.com/mefernandez/spring-dynamic-profiles</url>
+	   </repository>
+	</distributionManagement>
+
 	<build>
 		<plugins>
 			<plugin>
